@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, ImageBackground } from 'react-native';
-import  Video  from 'expo-av';
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { Audio } from 'expo-av';
 
 const App = () => {
   const [playerY, setPlayerY] = useState(new Animated.Value(0));
@@ -15,7 +15,7 @@ const App = () => {
         ...prev,
         { id: Math.random().toString(), x: new Animated.Value(300) },
       ]);
-    }, 2000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -25,8 +25,8 @@ const App = () => {
       setObstacles((prev) =>
         prev.map((obstacle) => {
           Animated.timing(obstacle.x, {
-            toValue: -150,
-            duration: 1000,
+            toValue: -250,
+            duration: 900,
             useNativeDriver: true,
           }).start();
           return obstacle;
@@ -41,13 +41,13 @@ const App = () => {
     if (!gameOver) {
       Animated.sequence([
         Animated.timing(playerY, {
-          toValue: -150,
-          duration: 350,
+          toValue: -400,
+          duration: 500,
           useNativeDriver: true,
         }),
         Animated.timing(playerY, {
-          toValue: 10,
-          duration: 450,
+          toValue: 0,
+          duration: 1000,
           useNativeDriver: true,
         }),
       ]).start();
@@ -64,8 +64,9 @@ const App = () => {
         }
       }
     });
+    
   };
-
+  if(obstacles === 1 ) {alert('level 1 won')}
   useEffect(() => {
     const interval = setInterval(() => {
       checkCollision();
@@ -82,57 +83,35 @@ const App = () => {
   };
 
   return (
-    <ImageBackground source={require('./assets/bg.jpg')} style={styles.background}>
-      <View style={styles.container}>
-        <Text style={styles.score}>Score: {score}</Text>
-        <Text style={styles.lives}>Lives: {lives}</Text>
-        {gameOver ? (
-          <View style={styles.gameOverContainer}>
-            <Text style={styles.gameOverText}>Game Over</Text>
-            <TouchableOpacity style={styles.restartButton} onPress={restartGame}>
-              <Text style={styles.restartButtonText}>Restart</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <>
-               <Video
-        source={require('./assets/bgv.mp4')}
-        rate={1.0}
-        volume={1.0}
-        isMuted={false}
-        resizeMode="cover"
-        shouldPlay
-        isLooping
-        style={styles.backgroundVideo}
-      />
-            <Animated.View style={[styles.player, { transform: [{ translateY: playerY }] }]} />
-            {obstacles.map((obstacle) => (
-              <Animated.View key={obstacle.id} style={[styles.obstacle, { transform: [{ translateX: obstacle.x }] }]} />
-            ))}
-            <TouchableOpacity style={styles.jumpButton} onPress={jump}>
-              <Text style={styles.jumpButtonText}>Jump</Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
-    </ImageBackground>
+    <View style={styles.container}>
+      <Text style={styles.score}>Score: {score}</Text>
+      <Text style={styles.lives}>Lives: {lives}</Text>
+      {gameOver ? (
+        <View style={styles.gameOverContainer}>
+          <Text style={styles.gameOverText}>Game Over</Text>
+          <TouchableOpacity style={styles.restartButton} onPress={restartGame}>
+            <Text style={styles.restartButtonText}>Restart</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
+          <Animated.View style={[styles.player, { transform: [{ translateY: playerY }] }]} />
+          {obstacles.map((obstacle) => (
+            <Animated.View key={obstacle.id} style={[styles.obstacle, { transform: [{ translateX: obstacle.x }] }]} />
+          ))}
+          <TouchableOpacity style={styles.jumpButton} onPress={jump}>
+            <Text style={styles.jumpButtonText}>Jump</Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  backgroundVideo: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    bottom: 0,
-    right: 0,
-  },
-  background: {
-    flex: 1,
-    resizeMode: 'cover',
-  },
   container: {
     flex: 1,
+    backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -150,47 +129,48 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 100,
   },
+  jumpButton: {
+    position: 'absolute',
+    bottom: 50,
+    width: 100,
+    height: 50,
+    backgroundColor: 'green',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  jumpButtonText: {
+    color: '#fff',
+    fontSize: 20,
+  },
   score: {
-    fontSize: 24,
-    fontWeight: 'bold',
     position: 'absolute',
     top: 50,
+    fontSize: 20,
   },
   lives: {
-    fontSize: 24,
-    fontWeight: 'bold',
     position: 'absolute',
     top: 80,
+    fontSize: 20,
   },
   gameOverContainer: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   gameOverText: {
-    fontSize: 48,
-    fontWeight: 'bold',
+    fontSize: 30,
     color: 'red',
   },
   restartButton: {
     marginTop: 20,
-    padding: 10,
+    width: 100,
+    height: 50,
     backgroundColor: 'blue',
-    borderRadius: 5,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   restartButtonText: {
-    color: 'white',
-    fontSize: 24,
-  },
-  jumpButton: {
-    position: 'absolute',
-    bottom: 50,
-    padding: 10,
-    backgroundColor: 'green',
-    borderRadius: 5,
-  },
-  jumpButtonText: {
-    color: 'white',
-    fontSize: 24,
+    color: '#fff',
+    fontSize: 20,
   },
 });
 
