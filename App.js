@@ -1,177 +1,143 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import { Audio } from 'expo-av';
+import React, { useEffect, useState, useRef } from 'react';
+import { StyleSheet, Text, View, Image, TouchableWithoutFeedback, Animated, Dimensions, Button  } from 'react-native';
+import { Asset } from 'expo-asset';
+import jungleBackground from './assets/jungle-background.jpg';
+import playerImage from './assets/player.gif';
+import obstacleImage from './assets/obstacle.png';
 
-const App = () => {
-  const [playerY, setPlayerY] = useState(new Animated.Value(0));
-  const [obstacles, setObstacles] = useState([]);
-  const [lives, setLives] = useState(3);
+const { width, height } = Dimensions.get('screen');
+
+const GRAVITY = 1.5;
+const JUMP_HEIGHT = 30;
+const OBSTACLE_SPEED = 5;
+
+export default function App() {
+  const [isGameRunning, setIsGameRunning] = useState(true);
   const [score, setScore] = useState(0);
-  const [gameOver, setGameOver] = useState(false);
+  const [lives, setLives] = useState(3);
+  const [lifePosition, setLifePosition] = useState(null)
+  const playerPosition = useRef(new Animated.Value(height / 2)).current;
+  const obstaclePosition = useRef(new Animated.Value(width)).current;
+  const playerVelocity = useRef(0);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setObstacles((prev) => [
-        ...prev,
-        { id: Math.random().toString(), x: new Animated.Value(300) },
-      ]);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setObstacles((prev) =>
-        prev.map((obstacle) => {
-          Animated.timing(obstacle.x, {
-            toValue: -250,
-            duration: 900,
-            useNativeDriver: true,
-          }).start();
-          return obstacle;
-        })
-      );
-    }, 50);
-
-    return () => clearInterval(interval);
-  }, [obstacles]);
 
   const jump = () => {
-    if (!gameOver) {
-      Animated.sequence([
-        Animated.timing(playerY, {
-          toValue: -400,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(playerY, {
-          toValue: 0,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
+    playerVelocity.current = -JUMP_HEIGHT;
   };
-
-  const checkCollision = () => {
-    obstacles.forEach((obstacle) => {
-      if (obstacle.x._value < 50 && obstacle.x._value > 0 && playerY._value === 0) {
-        setLives(() => lives - 1);
-        if (lives - 1 <= 0) {
-          setGameOver(true);
-          setLives(0)
-        }
-      }
-    });
-    
-  };
-  if(obstacles === 1 ) {alert('level 1 won')}
-  useEffect(() => {
-    const interval = setInterval(() => {
-      checkCollision();
-    }, 50);
-
-    return () => clearInterval(interval);
-  }, [obstacles, playerY]);
 
   const restartGame = () => {
-    setLives(3);
     setScore(0);
-    setObstacles([]);
-    setGameOver(false);
+    setLives(3);
+    setLifePosition(null);
+    playerPosition.setValue(height / 2);
+    obstaclePosition.setValue(width);
+    setIsGameRunning(true);
   };
 
+  useEffect(() => {
+    const gameLoop = setInterval(() => {
+      if (!isGameRunning) return;
+
+      playerVelocity.current += GRAVITY;
+      playerPosition.setValue(playerPosition._value + playerVelocity.current);
+
+      if (playerPosition._value >= height - 100) {
+        playerVelocity.current = 0;
+        playerPosition.setValue(height - 100);
+      }
+
+      obstaclePosition.setValue(obstaclePosition._value - OBSTACLE_SPEED);
+
+      if (obstaclePosition._value <= -50) {
+        obstaclePosition.setValue(width);
+        setScore(score + 1);
+      }
+
+      if (playerPosition._value >= height - 150 && obstaclePosition._value <= 50 && obstaclePosition._value >= 0) {
+        if(lives > 1 ) {
+          setLives( lives - 1 );
+          obstaclePosition.setValue(width)
+        } else {
+          setIsGameRunning(false)
+          alert('Game Over', 'You have no more lives left.', [{ text: 'OK', onPress: () => {} }]);
+        }
+      }
+      if(lifePosition && Math.abs(playerPosition._value - lifePosition) < 50 ) {
+        setLives(lives + 1);
+        setLifePosition(null)
+      }
+      
+    }, 20);
+
+    return () => clearInterval(gameLoop);
+  }, [isGameRunning, score, lives, lifePosition ]);
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.score}>Score: {score}</Text>
-      <Text style={styles.lives}>Lives: {lives}</Text>
-      {gameOver ? (
-        <View style={styles.gameOverContainer}>
-          <Text style={styles.gameOverText}>Game Over</Text>
-          <TouchableOpacity style={styles.restartButton} onPress={restartGame}>
-            <Text style={styles.restartButtonText}>Restart</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <>
-          <Animated.View style={[styles.player, { transform: [{ translateY: playerY }] }]} />
-          {obstacles.map((obstacle) => (
-            <Animated.View key={obstacle.id} style={[styles.obstacle, { transform: [{ translateX: obstacle.x }] }]} />
-          ))}
-          <TouchableOpacity style={styles.jumpButton} onPress={jump}>
-            <Text style={styles.jumpButtonText}>Jump</Text>
-          </TouchableOpacity>
-        </>
-      )}
-    </View>
+    <TouchableWithoutFeedback onPress={jump}>
+      <View style={styles.container}>
+        <Image source={jungleBackground} style={styles.background} />
+        <Animated.Image source={playerImage} style={[styles.player, { top: playerPosition }]} />
+        <Animated.Image source={obstacleImage} style={[styles.obstacle, { left: obstaclePosition }]} />
+        {lifePosition && <Image source={lifeImage} style={[styles.life, { bottom: lifePosition, left: width / 2 }]} />}
+        <Text style={styles.score}>Score: {score}</Text>
+        <Text style={styles.lives}>Lives: {lives}</Text>
+        {!isGameRunning && (
+          <View style={styles.gameOverContainer}>
+            <Text style={styles.gameOver}>Game Over</Text>
+            <Button title="Restart" onPress={restartGame} />
+          </View>
+        )}
+      </View>
+    </TouchableWithoutFeedback>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  background: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
   },
   player: {
-    width: 50,
-    height: 50,
-    backgroundColor: 'blue',
     position: 'absolute',
-    bottom: 100,
+    width: 70,
+    height: 100,
+    left: 50,
   },
   obstacle: {
+    position: 'absolute',
     width: 50,
     height: 50,
-    backgroundColor: 'red',
-    position: 'absolute',
-    bottom: 100,
+    top: height - 100,
   },
-  jumpButton: {
+  life: {
     position: 'absolute',
-    bottom: 50,
-    width: 100,
-    height: 50,
-    backgroundColor: 'green',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  jumpButtonText: {
-    color: '#fff',
-    fontSize: 20,
+    width: 30,
+    height: 30,
   },
   score: {
     position: 'absolute',
     top: 50,
-    fontSize: 20,
+    fontSize: 24,
+    color: 'white',
   },
   lives: {
     position: 'absolute',
     top: 80,
-    fontSize: 20,
+    fontSize: 24,
+    color: 'white',
   },
   gameOverContainer: {
+    position: 'absolute',
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  gameOverText: {
-    fontSize: 30,
+  gameOver: {
+    fontSize: 48,
     color: 'red',
   },
-  restartButton: {
-    marginTop: 20,
-    width: 100,
-    height: 50,
-    backgroundColor: 'blue',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  restartButtonText: {
-    color: '#fff',
-    fontSize: 20,
-  },
-});
-
-export default App;
+})
