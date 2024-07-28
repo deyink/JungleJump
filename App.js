@@ -1,15 +1,20 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { StyleSheet, Text, View, Image, TouchableWithoutFeedback, Animated, Dimensions, Button  } from 'react-native';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { Asset } from 'expo-asset';
-import jungleBackground from './assets/jungle-background.jpg';
+import jungleBackground from './assets/jungle-background.gif';
 import playerImage from './assets/player.gif';
 import obstacleImage from './assets/obstacle.png';
 
 const { width, height } = Dimensions.get('screen');
+const isLandscape = width > height ? true : false
 
-const GRAVITY = 1.5;
-const JUMP_HEIGHT = 30;
+
+const GRAVITY = 0.5;
+const JUMP_HEIGHT = 10;
 const OBSTACLE_SPEED = 5;
+const LIFE_APPEARANCE_RATE = 0.1; // Probability of life appearing on jump
+
 
 export default function App() {
   const [isGameRunning, setIsGameRunning] = useState(true);
@@ -19,6 +24,7 @@ export default function App() {
   const playerPosition = useRef(new Animated.Value(height / 2)).current;
   const obstaclePosition = useRef(new Animated.Value(width)).current;
   const playerVelocity = useRef(0);
+  const LANDSCAPE = useState(true)
 
 
   const jump = () => {
@@ -34,7 +40,15 @@ export default function App() {
     setIsGameRunning(true);
   };
 
+  
+
   useEffect(() => {
+
+    const lockOrientation = async () => {
+      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+    };
+    lockOrientation();
+
     const gameLoop = setInterval(() => {
       if (!isGameRunning) return;
 
@@ -66,7 +80,6 @@ export default function App() {
         setLives(lives + 1);
         setLifePosition(null)
       }
-      
     }, 20);
 
     return () => clearInterval(gameLoop);
@@ -107,13 +120,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 70,
     height: 100,
-    left: 50,
+    left: '10%',
   },
   obstacle: {
     position: 'absolute',
     width: 50,
     height: 50,
-    top: height - 100,
+    top: height - 50,
   },
   life: {
     position: 'absolute',
