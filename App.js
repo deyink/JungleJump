@@ -5,9 +5,10 @@ import { Asset } from 'expo-asset';
 import jungleBackground from './assets/jungle-background.gif';
 import playerImage from './assets/player.gif';
 import obstacleImage from './assets/obstacle.png';
+import lifeImage from './assets/life.png';
 
 const { width, height } = Dimensions.get('screen');
-const isLandscape = width > height ? true : false
+
 
 
 const GRAVITY = 0.5;
@@ -18,6 +19,7 @@ const LIFE_APPEARANCE_RATE = 0.1; // Probability of life appearing on jump
 
 export default function App() {
   const [isGameRunning, setIsGameRunning] = useState(true);
+  const [isPaused, setIsPaused] = useState(false)
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
   const [lifePosition, setLifePosition] = useState(null)
@@ -28,7 +30,14 @@ export default function App() {
 
 
   const jump = () => {
-    playerVelocity.current = -JUMP_HEIGHT;
+    if (!isPaused && isGameRunning) {
+      playerVelocity.current = -JUMP_HEIGHT;
+
+      // Randomly place an extra life on jump
+      if (Math.random() < LIFE_APPEARANCE_RATE && !lifePosition) {
+        setLifePosition(Math.random() * (height - 200) + 100);
+      }
+    }
   };
 
   const restartGame = () => {
@@ -52,6 +61,7 @@ export default function App() {
     const gameLoop = setInterval(() => {
       if (!isGameRunning) return;
 
+       
       playerVelocity.current += GRAVITY;
       playerPosition.setValue(playerPosition._value + playerVelocity.current);
 
