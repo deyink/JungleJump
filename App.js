@@ -11,9 +11,9 @@ const { width, height } = Dimensions.get('screen');
 
 
 
-const GRAVITY = 0.5;
-const JUMP_HEIGHT = 10;
-const OBSTACLE_SPEED = 5;
+const GRAVITY = 1.5;
+const JUMP_HEIGHT = 7;
+const OBSTACLE_SPEED = 9;
 const LIFE_APPEARANCE_RATE = 0.1; // Probability of life appearing on jump
 
 
@@ -22,7 +22,7 @@ export default function App() {
   const [isPaused, setIsPaused] = useState(false)
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
-  const [lifePosition, setLifePosition] = useState(null)
+  const lifePosition = useRef(new Animated.Value(width)).current;
   const playerPosition = useRef(new Animated.Value(height / 2)).current;
   const obstaclePosition = useRef(new Animated.Value(width)).current;
   const playerVelocity = useRef(0);
@@ -43,7 +43,7 @@ export default function App() {
   const restartGame = () => {
     setScore(0);
     setLives(3);
-    setLifePosition(null);
+  
     playerPosition.setValue(height / 2);
     obstaclePosition.setValue(width);
     setIsGameRunning(true);
@@ -88,7 +88,6 @@ export default function App() {
       }
       if(lifePosition && Math.abs(playerPosition._value - lifePosition) < 50 ) {
         setLives(lives + 1);
-        setLifePosition(null)
       }
     }, 20);
 
@@ -138,10 +137,12 @@ const styles = StyleSheet.create({
     height: 50,
     top: height - 50,
   },
+  
   life: {
     position: 'absolute',
     width: 30,
     height: 30,
+    top: height - 50,
   },
   score: {
     position: 'absolute',
